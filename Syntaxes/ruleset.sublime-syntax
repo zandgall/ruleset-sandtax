@@ -1,0 +1,108 @@
+%YAML 1.2
+---
+name: Sand Ruleset
+file_extensions: [ruleset]
+scope: source.ruleset.sand
+
+contexts:
+  main:
+    - match: "\\brule\\b"
+      scope: variable.function.rule
+      push: rule
+    - match: "\\b(\\w+)\\b\\s*{"
+      captures:
+        1: entity.name.element
+      push: element
+    - match: .
+      scope: comment.text
+
+  rule:
+    - match: "\\w+"
+      scope: constant.language.flags
+    - match: \(
+      scope: punctuation.section.parameters.begin
+      push: rule-parameters
+    - match: \{
+      scope: punctuation.section.ruleset.begin
+      push: rule-definition-match
+
+  rule-parameters:
+    - match: "(.):\\s*(\\w+)"
+      captures:
+        1: variable.parameter.name
+        2: constant.other.value
+    - match: \)
+      pop: true
+
+  rule-definition-match:
+    - match: "=>"
+      scope: keyword.operator.rule-seperator
+      push: rule-definition-replace
+    - match: "\\."
+      scope: variable.other.constant.match-any
+    - match: "."
+      scope: variable.parameter.match
+
+  rule-definition-replace:
+    - match: \}
+      pop: 3
+    - match: "\\."
+      scope: variable.other.constant.dont-replace
+    - match: "."
+      scope: variable.parameter.replace
+
+  element:
+    - match: \}
+      pop: true
+    - match: "\\s*(tags):\\s*"
+      captures:
+        1: entity.name.tag.type.tags
+      push: element-tag-tags
+    - match: "\\s*(color):\\s*"
+      captures:
+        1: entity.name.tag.type.color
+      push: element-tag-color
+    - match: "\\s*(variance):\\s*"
+      captures:
+        1: entity.name.tag.type.variance
+      push: element-tag-variance
+    - match: "\\s*(key):\\s*"
+      captures:
+        1: entity.name.tag.type.key
+      push: element-tag-key
+    - match: "\\s*(.*):\\s*"
+      captures:
+        1: entity.name.tag.type
+      push: element-tag-value
+  
+  element-tag-tags:
+    - match: "\\w+"
+      scope: string.tag
+    - match: \n
+      pop: true
+  element-tag-color:
+    - match: "#([0-9a-fA-F]{6})"
+      scope: keyword.color
+    - match: \n
+      pop: true
+  element-tag-variance:
+    - match: "([0-9]+)% ([0-9]+)% ([0-9]+)%"
+      scope: constant.numeric.variance
+      captures:
+        1: constant.numeric.variance.hue
+        2: constant.numeric.variance.saturated
+        3: constant.numeric.variance.value
+    - match: "([0-9]+)% ([0-9]+)%"
+      scope: invalid.unfinished-variance-hs
+    - match: "([0-9]+)%"
+      scope: invalid.unfinished-variance-h
+    - match: \n
+      pop: true
+  element-tag-key:
+    - match: "\\b(.)\\b"
+      scope: constant.character.key
+    - match: \n
+      pop: true
+  element-tag-value:
+    - match: \n
+      pop: true
